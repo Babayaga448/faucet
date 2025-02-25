@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider"></script>
     <style>
         body {
-            background-color: #6A0DAD; /* Purple background */
+            background-color: #6A0DAD;
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -18,12 +18,12 @@
             max-width: 400px;
             margin: auto;
             padding: 20px;
-            background-color: #5A0080; /* A different shade of purple */
+            background-color: #5A0080;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         button {
-            background-color: #A020F0; /* Purple */
+            background-color: #A020F0;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -36,7 +36,7 @@
             background-color: #8B00FF;
         }
         .enabled {
-            background-color: #4CAF50; /* Green when enabled */
+            background-color: #4CAF50;
         }
         .enabled:hover {
             background-color: #45a049;
@@ -45,24 +45,9 @@
             margin-top: 15px;
             font-size: 14px;
         }
-        .twitter-link {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .twitter-link:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
-
-    <!-- Twitter Link at the Top Right -->
-    <a href="https://x.com/BabaYaga4487_" class="twitter-link" target="_blank">Our Twitter (X)</a>
-
     <div class="container">
         <h1>MON Faucet</h1>
         <button id="connectWallet">Connect Wallet</button>
@@ -71,51 +56,40 @@
     </div>
 
     <script>
-        let contract;
-        const faucetAddress = "YOUR_FAUCET_CONTRACT_ADDRESS"; // Replace with actual contract address
-        const abi = [ /* Your contract ABI */ ];
+        const monadRpc = "https://rpc.testnet.monad.xyz";
+        const provider = new ethers.providers.JsonRpcProvider(monadRpc);
+        const faucetAddress = "0xFC1e72eB6E4d084aF3B537d1484D1b1586AeF57A";
+        const abi = [
+            { "inputs": [], "name": "claim", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+            { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "bool", "name": "newState", "type": "bool" }], "name": "FaucetToggled", "type": "event" },
+            { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "MonClaimed", "type": "event" },
+            { "inputs": [], "name": "toggleFaucet", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }], "name": "transferOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [], "name": "isFaucetActive", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }
+        ];
 
-        // ✅ Improved MetaMask Detection (Fix for Undefined `window.ethereum`)
-        async function detectMetaMask() {
-            let provider = window.ethereum; // Try to get MetaMask provider
-
-            if (!provider) {
-                provider = await detectEthereumProvider(); // Use MetaMask’s official detection method
-            }
-
-            if (provider) {
-                console.log("✅ MetaMask detected!");
-                window.ethereum = provider; // Ensure it's globally available
-                document.getElementById("status").innerText = "MetaMask detected. Please connect your wallet.";
-            } else {
-                console.warn("❌ MetaMask not found.");
-                document.getElementById("status").innerText = "MetaMask not detected. Install it to use this site.";
-                alert("MetaMask not detected! Please install it and refresh the page.");
-            }
-        }
-
-        // 🟢 Connect Wallet Function
+        let signer, contract;
+        
         document.getElementById("connectWallet").addEventListener("click", async () => {
-            if (typeof window.ethereum !== "undefined") {
+            if (window.ethereum) {
                 try {
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
                     await window.ethereum.request({ method: "eth_requestAccounts" });
-                    const signer = provider.getSigner();
+                    signer = web3Provider.getSigner();
                     contract = new ethers.Contract(faucetAddress, abi, signer);
-
                     document.getElementById("status").innerText = "✅ Wallet Connected!";
                     document.getElementById("claimMON").disabled = false;
                     document.getElementById("claimMON").classList.add("enabled");
                 } catch (error) {
-                    console.error("❌ Wallet connection failed:", error);
                     document.getElementById("status").innerText = "❌ Connection failed!";
                 }
             } else {
-                alert("❌ MetaMask not detected! Please install it and refresh the page.");
+                alert("MetaMask not detected! Install it to use this site.");
             }
         });
 
-        // 🟢 Claim MON Function
         document.getElementById("claimMON").addEventListener("click", async () => {
             if (!contract) {
                 document.getElementById("status").innerText = "❌ Wallet not connected!";
@@ -128,14 +102,9 @@
                 document.getElementById("claimMON").disabled = true;
                 document.getElementById("claimMON").classList.remove("enabled");
             } catch (error) {
-                console.error("❌ Claim failed:", error);
                 document.getElementById("status").innerText = "❌ Claim failed!";
             }
         });
-
-        // ✅ Auto-check MetaMask on Page Load
-        detectMetaMask();
     </script>
-
 </body>
 </html>
