@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MON Faucet</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider"></script>
+    <style>
+        body {
+            background-color: #6A0DAD; /* Purple background */
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            background-color: #5A0080; /* A different shade of purple */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        button {
+            background-color: #A020F0; /* Purple */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #8B00FF;
+        }
+        .enabled {
+            background-color: #4CAF50; /* Green when enabled */
+        }
+        .enabled:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .twitter-link {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .twitter-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Twitter Link at the Top Right -->
+    <a href="https://x.com/BabaYaga4487_" class="twitter-link" target="_blank">Our Twitter (X)</a>
+
+    <div class="container">
+        <h1>MON Faucet</h1>
+        <button id="connectWallet">Connect Wallet</button>
+        <button id="claimMON" disabled>Claim 0.1 MON</button>
+        <p id="status">Checking MetaMask...</p>
+    </div>
+
+    <script>
+        let contract;
+        const faucetAddress = "YOUR_FAUCET_CONTRACT_ADDRESS"; // Replace with actual contract address
+        const abi = [ /* Your contract ABI */ ];
+
+        // ✅ Improved MetaMask Detection (Fix for Undefined `window.ethereum`)
+        async function detectMetaMask() {
+            let provider = window.ethereum; // Try to get MetaMask provider
+
+            if (!provider) {
+                provider = await detectEthereumProvider(); // Use MetaMask’s official detection method
+            }
+
+            if (provider) {
+                console.log("✅ MetaMask detected!");
+                window.ethereum = provider; // Ensure it's globally available
+                document.getElementById("status").innerText = "MetaMask detected. Please connect your wallet.";
+            } else {
+                console.warn("❌ MetaMask not found.");
+                document.getElementById("status").innerText = "MetaMask not detected. Install it to use this site.";
+                alert("MetaMask not detected! Please install it and refresh the page.");
+            }
+        }
+
+        // 🟢 Connect Wallet Function
+        document.getElementById("connectWallet").addEventListener("click", async () => {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+                    const signer = provider.getSigner();
+                    contract = new ethers.Contract(faucetAddress, abi, signer);
+
+                    document.getElementById("status").innerText = "✅ Wallet Connected!";
+                    document.getElementById("claimMON").disabled = false;
+                    document.getElementById("claimMON").classList.add("enabled");
+                } catch (error) {
+                    console.error("❌ Wallet connection failed:", error);
+                    document.getElementById("status").innerText = "❌ Connection failed!";
+                }
+            } else {
+                alert("❌ MetaMask not detected! Please install it and refresh the page.");
+            }
+        });
+
+        // 🟢 Claim MON Function
+        document.getElementById("claimMON").addEventListener("click", async () => {
+            if (!contract) {
+                document.getElementById("status").innerText = "❌ Wallet not connected!";
+                return;
+            }
+            try {
+                const tx = await contract.claim();
+                await tx.wait();
+                document.getElementById("status").innerText = "✅ Claim successful!";
+                document.getElementById("claimMON").disabled = true;
+                document.getElementById("claimMON").classList.remove("enabled");
+            } catch (error) {
+                console.error("❌ Claim failed:", error);
+                document.getElementById("status").innerText = "❌ Claim failed!";
+            }
+        });
+
+        // ✅ Auto-check MetaMask on Page Load
+        detectMetaMask();
+    </script>
+
+</body>
+</html>
